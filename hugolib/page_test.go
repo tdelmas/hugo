@@ -1733,3 +1733,133 @@ $$$
 		`<pre><code class="language-bash {hl_lines=[1]}" data-lang="bash {hl_lines=[1]}">SHORT`,
 	)
 }
+
+func TestBlackfridayEscaping1(t *testing.T) {
+	t.Parallel()
+
+	b := newTestSitesBuilder(t).WithConfigFile("toml", `
+baseURL = "https://example.org"
+
+[markup]
+defaultMarkdownHandler="blackfriday"
+[markup.highlight]
+noClasses=false
+`)
+	// Use the new attribute syntax to make sure it's not Goldmark.
+	b.WithTemplatesAdded("_default/single_escape.html", `
+Title: {{ .Title }}
+Content: {{ .Content }}
+`)
+
+	content := `
++++
+title = "A Page!"
++++
+
+## Code Fence
+
+$$$text
+If a < b , then ...
+$$$
+
+`
+	content = strings.ReplaceAll(content, "$$$", "```")
+
+	for i, ext := range []string{"md", "html"} {
+		b.WithContent(fmt.Sprintf("page%d.%s", i+1, ext), content)
+
+	}
+
+	b.Build(BuildCfg{})
+
+	b.AssertFileContent("public/page1/index.html",
+		`<code class="language-text" data-lang="text">If a &lt; b , then ...</code></pre>`,
+	)
+
+}
+
+func TestBlackfridayEscaping2(t *testing.T) {
+	t.Parallel()
+
+	b := newTestSitesBuilder(t).WithConfigFile("toml", `
+baseURL = "https://example.org"
+
+[markup]
+defaultMarkdownHandler="blackfriday"
+[markup.highlight]
+noClasses=false
+`)
+	// Use the new attribute syntax to make sure it's not Goldmark.
+	b.WithTemplatesAdded("_default/single_escape.html", `
+Title: {{ .Title }}
+Content: {{ .Content }}
+`)
+
+	content := `
++++
+title = "A Page!"
++++
+
+## Code Fence
+
+$$$
+If a < b , then ...
+$$$
+
+`
+	content = strings.ReplaceAll(content, "$$$", "```")
+
+	for i, ext := range []string{"md", "html"} {
+		b.WithContent(fmt.Sprintf("page%d.%s", i+1, ext), content)
+
+	}
+
+	b.Build(BuildCfg{})
+
+	b.AssertFileContent("public/page1/index.html",
+		`<pre><code>If a &lt; b , then ...</code></pre>`,
+	)
+
+}
+
+func TestBlackfridayEscapingInline(t *testing.T) {
+	t.Parallel()
+
+	b := newTestSitesBuilder(t).WithConfigFile("toml", `
+baseURL = "https://example.org"
+
+[markup]
+defaultMarkdownHandler="blackfriday"
+[markup.highlight]
+noClasses=false
+`)
+	// Use the new attribute syntax to make sure it's not Goldmark.
+	b.WithTemplatesAdded("_default/single_escape.html", `
+Title: {{ .Title }}
+Content: {{ .Content }}
+`)
+
+	content := `
++++
+title = "A Page!"
++++
+
+## Code Fence inline
+
+	If a < b , then ...
+
+`
+	content = strings.ReplaceAll(content, "$$$", "```")
+
+	for i, ext := range []string{"md", "html"} {
+		b.WithContent(fmt.Sprintf("page%d.%s", i+1, ext), content)
+
+	}
+
+	b.Build(BuildCfg{})
+
+	b.AssertFileContent("public/page1/index.html",
+		`<pre><code>If a &lt; b , then ...</code></pre>`,
+	)
+
+}
